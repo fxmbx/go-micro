@@ -8,34 +8,29 @@ import (
 
 func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 	var requestPayload struct {
-		email    string `json:"email"`
-		password string `json:"password"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
-
 	err := app.readJson(w, r, &requestPayload)
 	if err != nil {
-		app.errorJson(w, err, http.StatusBadRequest)
+		app.errorJson(w, err)
 		return
 	}
 
-	user, err := app.Models.User.GetByEmail(requestPayload.email)
+	user, err := app.Models.User.GetByEmail(requestPayload.Email)
 	if err != nil {
-		app.errorJson(w, errors.New("Invalid credentials"), http.StatusBadRequest)
+		app.errorJson(w, errors.New("inavlid credentials"))
 		return
 	}
 
-	valid, err := user.PasswordMatches(requestPayload.password)
+	valid, err := user.PasswordMatches(requestPayload.Password)
 	if err != nil || !valid {
-		app.errorJson(w, errors.New("Invalid credentials"), http.StatusBadRequest)
+		app.errorJson(w, errors.New("inavlid credentials"))
 		return
 	}
-
-	payload := jsonResponse{
-		Error:   false,
-		Message: fmt.Sprintf("Logged in user %s", requestPayload.email),
-		Data:    user,
-	}
-
+	var payload jsonResponse
+	payload.Error = false
+	payload.Message = fmt.Sprintf("logged in user %s", user.Email)
+	payload.Data = user
 	app.writeJson(w, http.StatusAccepted, payload)
-
 }
