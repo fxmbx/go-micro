@@ -23,7 +23,7 @@ services:
       mode: replicated
       replicas: 1
     environment:
-      DSN: "host=postgres port=5432 user=postgres password=Beedayme2211. dbname=userdb sslmode=disable timezone=UTC connect_timeout=5"
+      DSN: "host=postgres port=5432 user=### password=###. dbname=userdb sslmode=disable timezone=UTC connect_timeout=5"
 
   postgres:
     image: "postgres:14.0"
@@ -34,8 +34,8 @@ services:
       replicas: 1
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Beedayme2211.
+      POSTGRES_USER: ###
+      POSTGRES_PASSWORD: ###.
       POSTGRES_DB: userdb
     volumes:
       - ./db-data/postgres:/var/lib/postgressql/data
