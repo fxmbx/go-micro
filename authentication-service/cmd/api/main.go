@@ -24,11 +24,14 @@ type Config struct {
 }
 
 func main() {
-	app := &Config{}
 
 	conn := connectDb()
 	if conn == nil {
 		log.Panic("Couldn't connect to postgres 😞")
+	}
+	app := &Config{
+		DB:     conn,
+		Models: data.New(conn),
 	}
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", port),

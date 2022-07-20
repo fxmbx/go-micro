@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -19,12 +20,14 @@ func (app *Config) readJSON(w http.ResponseWriter, r *http.Request, data any) er
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 
 	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(data); err != nil {
-		return err
+	err := dec.Decode(data)
+	if err != nil {
+		return app.errorJson(w, err)
 	}
 
-	if err := dec.Decode(&struct{}{}); err != io.EOF {
-		return errors.New("body must have only a single JSON value")
+	err = dec.Decode(&struct{}{})
+	if err != io.EOF {
+		return app.errorJson(w, errors.New("body must have only a single JSON value"))
 	}
 	return nil
 }
@@ -59,6 +62,6 @@ func (app *Config) errorJson(w http.ResponseWriter, err error, status ...int) er
 	var payload jsonResponse
 	payload.Error = true
 	payload.Message = err.Error()
-
+	log.Printf("\n\nError payload 😞 %v\n\n", payload)
 	return app.writeJson(w, statusCode, payload)
 }

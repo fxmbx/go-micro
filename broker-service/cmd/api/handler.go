@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 )
 
@@ -34,7 +35,9 @@ func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
 
 func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	var requestPayload RequestPayload
+
 	err := app.readJSON(w, r, &requestPayload)
+	log.Printf("request Payload 😁 %v", requestPayload)
 	if err != nil {
 		app.errorJson(w, err, http.StatusBadRequest)
 		return
@@ -50,8 +53,9 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 
 func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 	jsonData, _ := json.MarshalIndent(a, "", "\t")
+	log.Printf("auth Payload 😁 %s", jsonData)
 
-	request, err := http.NewRequest("POST", "http://authnetication-service/authenticate", bytes.NewBuffer(jsonData))
+	request, err := http.NewRequest("POST", "http://authentication-service/authenticate", bytes.NewBuffer(jsonData))
 	if err != nil {
 		app.errorJson(w, err)
 	}
@@ -67,6 +71,7 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 		app.errorJson(w, errors.New("invalid credentials"))
 		return
 	} else if response.StatusCode != http.StatusAccepted {
+		log.Println(response.StatusCode)
 		app.errorJson(w, errors.New("error calling auth service"))
 		return
 	}

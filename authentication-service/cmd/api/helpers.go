@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -16,8 +17,13 @@ type jsonResponse struct {
 func (app *Config) readJson(w http.ResponseWriter, r *http.Request, data any) error {
 	maxByte := 1048576
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxByte))
+	// log.Printf("\n\nRequest Body :\n %s\n\n", r.Body)
 	dec := json.NewDecoder(r.Body)
-	err := dec.Decode(dec)
+	// log.Printf("\n\nDecoded Body :\n %s\n\n", dec)
+
+	err := dec.Decode(data)
+	log.Printf("\n\n data passed in Body :\n %s\n\n", data)
+
 	if err != nil {
 		return err
 	}
@@ -30,6 +36,7 @@ func (app *Config) readJson(w http.ResponseWriter, r *http.Request, data any) er
 
 func (app *Config) writeJson(w http.ResponseWriter, status int, data any, headers ...http.Header) error {
 	out, err := json.Marshal(data)
+	log.Printf("🐼: %s", data)
 	if err != nil {
 		return err
 	}
@@ -58,6 +65,7 @@ func (app *Config) errorJson(w http.ResponseWriter, err error, status ...int) er
 	var payload jsonResponse
 	payload.Error = true
 	payload.Message = err.Error()
+	log.Printf("\nError: %s \n", payload)
 
 	return app.writeJson(w, statusCode, payload)
 }
