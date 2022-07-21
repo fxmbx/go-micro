@@ -14,13 +14,12 @@ func (app *Config) routes() http.Handler {
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"POST", "GET", "PUT", "DELETE", "OPTION"},
-		AllowedHeaders:   []string{"Content-Type", "Accept", "Authorization", ""},
+		AllowedHeaders:   []string{"Content-Type", "Accept", "Authorization", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Links"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
 
 	mux.Use(middleware.Heartbeat("/ping"))
-	mux.Post("/log", app.WriteLog)
 	return mux
 }

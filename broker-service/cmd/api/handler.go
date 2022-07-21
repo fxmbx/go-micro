@@ -12,6 +12,7 @@ type RequestPayload struct {
 	Action string      `json:"action"`
 	Auth   AuthPayload `json:"auth,omitempty"`
 	Log    LogPayload  `json:"log,omitempty"`
+	Mail   MailPayload `json:"mail,omitempty"`
 }
 
 type AuthPayload struct {
@@ -24,11 +25,18 @@ type LogPayload struct {
 	Data string `json:"data"`
 }
 
+type MailPayload struct {
+	From    string `json:"from"`
+	To      string `json:"to"`
+	Subject string `json:"subject"`
+	Message string `json:"message"`
+}
+
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
 	payload := jsonResponse{
 		Error:   false,
 		Message: "Hit the broker",
-		Data:    []string{"one", "two", "three"},
+		Data:    "Palazzo, jiggy, gb'oja, k'ole reason",
 	}
 
 	_ = app.writeJson(w, http.StatusOK, payload)
@@ -53,6 +61,8 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 		app.authenticate(w, requestPayload.Auth)
 	case "log":
 		app.logItem(w, requestPayload.Log)
+	case "mail":
+		app.sendmail(w, requestPayload.Mail)
 
 	default:
 		app.errorJson(w, errors.New("unknown action"))
@@ -141,6 +151,50 @@ func (app *Config) logItem(w http.ResponseWriter, entry LogPayload) {
 	payload.Error = false
 	payload.Message = "Logged"
 	payload.Data = jsonFromService.Data
+
+	app.writeJson(w, http.StatusAccepted, payload)
+
+}
+
+func (app *Config) sendmail(w http.ResponseWriter, msg MailPayload) {
+	jsonData, err := json.Marshal(msg)
+	if err != nil {
+		app.errorJson(w, err)
+		return
+	}
+
+	request, err := http.NewRequest("POST", "http://mailer-service/send", bytes.NewBuffer(jsonData))
+	if err != nil {
+		app.errorJson(w, err)
+		return
+	}
+	request.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		app.errorJson(w, err)
+		return
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusAccepted {
+		app.errorJson(w, errors.New("something went wrong: 😞 "))
+		return
+	}
+	var jsonFromService jsonResponse
+
+	err = json.NewDecoder(response.Body).Decode(&jsonFromService)
+	app.errorJson(w, errors.New("something went wrong: 😞 "))
+	if err != nil {
+		app.errorJson(w, err)
+		return
+	}
+	if jsonFromService.Error {
+		app.errorJson(w, errors.New(jsonFromService.Message))
+		return
+	}
+	var payload jsonResponse
+	payload.Error = false
+	payload.Message = "Mail Sent to " + msg.To
 
 	app.writeJson(w, http.StatusAccepted, payload)
 
