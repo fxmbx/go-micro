@@ -25,6 +25,16 @@ services:
     environment:
       DSN: "host=postgres port=5432 user=postgres password=Beedayme2211. dbname=userdb sslmode=disable timezone=UTC connect_timeout=5"
 
+  logger-service:
+    build:
+      context: ./../logger-service
+      dockerfile: ./../logger-service/logger-service.dockerfile
+    restart: always
+    # ports: -"8082:80"//removed this becuae we dont want to expose the logger
+    deploy:
+      mode: replicated
+      replicas: 1
+
   postgres:
     image: "postgres:14.0"
     ports:
@@ -39,3 +49,14 @@ services:
       POSTGRES_DB: userdb
     volumes:
       - ./db-data/postgres:/var/lib/postgressql/data
+
+  mongo:
+    image: "mongo:4.2.17-bionic"
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: logs
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - ./db-data/mongo/:/data/db
