@@ -51,7 +51,7 @@ services:
       MAIL_USERNAME: ""
       MAIL_PASSWORD: ""
       MAIL_ENCRYPTION: none
-      MAIL_FROM: "fun.test@example.com"
+      MAIL_FROM: "funtest@example.com"
       MAIL_FROMNAME: "John Doe"
       MAIL_PORT: 1025
 

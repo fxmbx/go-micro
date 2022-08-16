@@ -1,1 +1,34 @@
 package main
+
+import (
+	"context"
+	"log"
+	"logger-service/data"
+	"time"
+)
+
+type RPCServer struct {
+}
+
+type RPCPayload struct {
+	Name string
+	Data string
+}
+
+func (rpc *RPCServer) LogInfo(payload RPCPayload, resp *string) error {
+	// ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+
+	collection := client.Database("logs").Collection("logs")
+	_, err := collection.InsertOne(context.TODO(), data.LogEntry{
+		Name:      payload.Name,
+		Data:      payload.Data,
+		CreatedAt: time.Now(),
+	})
+	if err != nil {
+		log.Println("error writing to mongo:", err)
+		return err
+	}
+
+	*resp = "Processed payload via RPC: " + payload.Name
+	return nil
+}
