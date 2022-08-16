@@ -23,7 +23,7 @@ services:
       mode: replicated
       replicas: 1
     environment:
-      DSN: "host=postgres port=5432 user=postgres password=##. dbname=userdb sslmode=disable timezone=UTC connect_timeout=5"
+      DSN: "host=postgres port=5432 user=postgres password=Beedayme2211. dbname=userdb sslmode=disable timezone=UTC connect_timeout=5"
 
   logger-service:
     build:
@@ -36,12 +36,12 @@ services:
     # ports: -"8082:80"//removed this becuae we dont want to expose the logger
 
   mailer-service:
-    build:  
+    build:
       context: ./../mail-service
       dockerfile: ./../mail-service/mail-service.dockerfile
     restart: always
     # ports:
-      # -"8083:80"
+    # -"8083:80"
     deploy:
       mode: replicated
       replicas: 1
@@ -55,6 +55,13 @@ services:
       MAIL_FROMNAME: "John Doe"
       MAIL_PORT: 1025
 
+  listener-service:
+    build:
+      context: ./../listener-service
+      dockerfile: ./../listener-service/listener-service.dockerfile
+    deploy:
+      mode: replicated
+      replicas: 1
 
   postgres:
     image: "postgres:14.0"
@@ -66,7 +73,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ##.
+      POSTGRES_PASSWORD: Beedayme2211.
       POSTGRES_DB: userdb
     volumes:
       - ./db-data/postgres:/var/lib/postgressql/data
@@ -78,7 +85,7 @@ services:
     environment:
       MONGO_INITDB_DATABASE: logs
       MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: ##
+      MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
       - ./db-data/mongo/:/data/db
 
@@ -88,4 +95,12 @@ services:
       - "1025:1025"
       - "8025:8025"
 
-
+  rabbitmq:
+    image: "rabbitmq:3.9-alpine"
+    ports:
+      - "5672:5672"
+    deploy:
+      mode: replicated
+      replicas: 1
+    volumes:
+      - ./db-data/rabbitmq/:/var/lib/rabbitmq/

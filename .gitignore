@@ -352,3 +352,5 @@ MigrationBackup/
 .ionide/
 
 mongo/
+rabbitmq/
+postgres/

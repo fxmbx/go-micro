@@ -52,6 +52,7 @@ func (u *User) GetAll() ([]*User, error) {
 	from users order by last_name`
 
 	rows, err := db.QueryContext(ctx, query)
+
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +79,6 @@ func (u *User) GetAll() ([]*User, error) {
 
 		users = append(users, &user)
 	}
-
 	return users, nil
 }
 
@@ -87,11 +87,17 @@ func (u *User) GetByEmail(email string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	query := `select id, email, first_name, last_name, password, user_active, created_at, updated_at from users where email = $1`
-
+	query := `
+	select 
+		id, email, first_name, last_name, password, user_active, created_at, updated_at 
+	from 
+		users
+	where
+		 email = $1`
 	var user User
 	row := db.QueryRowContext(ctx, query, email)
-
+	log.Println(email)
+	log.Println(row)
 	err := row.Scan(
 		&user.ID,
 		&user.Email,
@@ -103,6 +109,7 @@ func (u *User) GetByEmail(email string) (*User, error) {
 		&user.UpdatedAt,
 	)
 
+	log.Println("l", err)
 	if err != nil {
 		return nil, err
 	}

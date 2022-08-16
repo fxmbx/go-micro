@@ -20,7 +20,6 @@ func (app *Config) readJson(w http.ResponseWriter, r *http.Request, data any) er
 	// log.Printf("\n\nRequest Body :\n %s\n\n", r.Body)
 	dec := json.NewDecoder(r.Body)
 	// log.Printf("\n\nDecoded Body :\n %s\n\n", dec)
-
 	err := dec.Decode(data)
 	log.Printf("\n\n data passed in Body :\n %s\n\n", data)
 
@@ -36,7 +35,7 @@ func (app *Config) readJson(w http.ResponseWriter, r *http.Request, data any) er
 
 func (app *Config) writeJson(w http.ResponseWriter, status int, data any, headers ...http.Header) error {
 	out, err := json.Marshal(data)
-	log.Printf("🐼: %s", data)
+	log.Println("🐼: ", data)
 	if err != nil {
 		return err
 	}
@@ -65,7 +64,7 @@ func (app *Config) errorJson(w http.ResponseWriter, err error, status ...int) er
 	var payload jsonResponse
 	payload.Error = true
 	payload.Message = err.Error()
-	log.Printf("\nError: %s \n", payload)
+	log.Printf("\nError: %v \n", payload)
 
 	return app.writeJson(w, statusCode, payload)
 }

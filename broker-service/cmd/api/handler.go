@@ -1,6 +1,7 @@
 package main
 
 import (
+	"broker/event"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -60,7 +61,8 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	case "auth":
 		app.authenticate(w, requestPayload.Auth)
 	case "log":
-		app.logItem(w, requestPayload.Log)
+		// app.logItem(w, requestPayload.Log)
+		app.logEventViaRabbit(w, requestPayload.Log)
 	case "mail":
 		app.sendmail(w, requestPayload.Mail)
 
@@ -70,7 +72,7 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
-	jsonData, _ := json.MarshalIndent(a, "", "\t")
+	jsonData, _ := json.Marshal(a)
 	log.Printf("auth Payload 😁 %s", jsonData)
 
 	request, err := http.NewRequest("POST", "http://authentication-service/authenticate", bytes.NewBuffer(jsonData))
@@ -89,7 +91,7 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 		app.errorJson(w, errors.New("invalid credentials"))
 		return
 	} else if response.StatusCode != http.StatusAccepted {
-		log.Println(response.StatusCode)
+		log.Println(response)
 		app.errorJson(w, errors.New("error calling auth service"))
 		return
 	}
@@ -197,5 +199,39 @@ func (app *Config) sendmail(w http.ResponseWriter, msg MailPayload) {
 	payload.Message = "Mail Sent to " + msg.To
 
 	app.writeJson(w, http.StatusAccepted, payload)
+
+}
+
+func (app *Config) logEventViaRabbit(w http.ResponseWriter, l LogPayload) {
+	err := app.pushToQueue(l.Name, l.Data)
+	if err != nil {
+		app.errorJson(w, err)
+		return
+	}
+	payload := jsonResponse{
+		Error:   false,
+		Message: "Logged via RabbitMq 🐇",
+	}
+	app.writeJson(w, http.StatusAccepted, payload)
+}
+
+func (app *Config) pushToQueue(name, message string) error {
+	emitter, err := event.NewEventEmitter(app.Rabbit)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	payload := LogPayload{
+		Name: name,
+		Data: message,
+	}
+	j, _ := json.Marshal(&payload)
+	err = emitter.Push(string(j), "log.INFO")
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
 
 }
