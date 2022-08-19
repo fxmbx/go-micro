@@ -73,7 +73,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Beedayme2211.
+      POSTGRES_PASSWORD: postgres.
       POSTGRES_DB: userdb
     volumes:
       - ./db-data/postgres:/var/lib/postgressql/data
