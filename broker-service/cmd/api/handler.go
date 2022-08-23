@@ -2,12 +2,18 @@ package main
 
 import (
 	"broker/event"
+	"broker/logs"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"net/rpc"
+	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type RequestPayload struct {
@@ -53,6 +59,7 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	var requestPayload RequestPayload
 
 	err := app.readJSON(w, r, &requestPayload)
+	// err := json.NewDecoder(r.Body).Decode(&requestPayload)
 	log.Printf("request Payload 😁 %v", requestPayload)
 	if err != nil {
 		app.errorJson(w, err, http.StatusBadRequest)
@@ -73,6 +80,7 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//this handler calls the authentication service via http request
 func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 	jsonData, _ := json.Marshal(a)
 	log.Printf("auth Payload 😁 %s", jsonData)
@@ -117,6 +125,7 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 
 }
 
+//this logItem handler makes a call to the logger-service via http request just like authenticate service above
 func (app *Config) logItem(w http.ResponseWriter, entry LogPayload) {
 	jsonData, err := json.Marshal(entry)
 	if err != nil {
@@ -204,6 +213,7 @@ func (app *Config) sendmail(w http.ResponseWriter, msg MailPayload) {
 
 }
 
+//this logEventViaRabbit send a message to the rabbitmq server where the message stays on the queue till the service that needs to act on the message picks it up
 func (app *Config) logEventViaRabbit(w http.ResponseWriter, l LogPayload) {
 	err := app.pushToQueue(l.Name, l.Data)
 	if err != nil {
@@ -217,6 +227,7 @@ func (app *Config) logEventViaRabbit(w http.ResponseWriter, l LogPayload) {
 	app.writeJson(w, http.StatusAccepted, payload)
 }
 
+//pustToQueue creates a newEventEmitter using the Rabbitmq connection and pushes a stringiified version of the payload with title
 func (app *Config) pushToQueue(name, message string) error {
 	emitter, err := event.NewEventEmitter(app.Rabbit)
 	if err != nil {
@@ -266,6 +277,69 @@ func (app *Config) logItemViaRPC(w http.ResponseWriter, l LogPayload) {
 		Message: result,
 	}
 
+	app.writeJson(w, http.StatusAccepted, payload)
+
+}
+
+func (app *Config) logItemViaGRPC(w http.ResponseWriter, r *http.Request) {
+	var req RequestPayload
+
+	// err := json.NewDecoder(r.Body).Decode(&req)
+	err := app.readJSON(w, r, &req)
+	if err != nil {
+		app.errorJson(w, err)
+	}
+	conn, err := grpc.Dial("logger-service:50001", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	if err != nil {
+		app.errorJson(w, err)
+	}
+
+	defer conn.Close()
+
+	client := logs.NewLogServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	_, err = client.WriteLog(ctx, &logs.LogRequest{
+		LogEntry: &logs.Log{
+			Name: req.Log.Name,
+			Data: req.Log.Data,
+		},
+	})
+	if err != nil {
+		app.errorJson(w, err)
+	}
+
+	var payloag jsonResponse
+	payloag.Error = false
+	payloag.Message = "logged via grpc"
+
+	app.writeJson(w, http.StatusAccepted, payloag)
+}
+
+func (app *Config) logGrpc(w http.ResponseWriter, l LogPayload) {
+
+	logreq := logs.LogRequest{
+		LogEntry: &logs.Log{
+			Name: l.Name,
+			Data: l.Data,
+		},
+	}
+
+	conn, err := grpc.Dial("logger-server:50001", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	if err != nil {
+		app.errorJson(w, err)
+	}
+
+	client := logs.NewLogServiceClient(conn)
+	_, err = client.WriteLog(context.TODO(), &logreq)
+	if err != nil {
+		app.errorJson(w, err)
+	}
+
+	var payload jsonResponse
+	payload.Error = false
+	payload.Message = "logged via grpc"
 	app.writeJson(w, http.StatusAccepted, payload)
 
 }

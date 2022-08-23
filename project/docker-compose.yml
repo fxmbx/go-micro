@@ -22,8 +22,10 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+    depends_on:
+      - postgres
     environment:
-      DSN: "host=postgres port=5432 user=postgres password=Beedayme2211. dbname=userdb sslmode=disable timezone=UTC connect_timeout=5"
+      DSN: "host=postgres port=5432 user=postgres password=postgres. dbname=userdb sslmode=disable timezone=UTC connect_timeout=5"
 
   logger-service:
     build:

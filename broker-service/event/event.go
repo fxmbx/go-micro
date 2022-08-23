@@ -4,6 +4,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+//declares an exchane channel,
 func declareExchange(ch *amqp.Channel) error {
 	return ch.ExchangeDeclare(
 		"logs_topic", //name
@@ -16,6 +17,7 @@ func declareExchange(ch *amqp.Channel) error {
 	)
 }
 
+//declares a queue
 func declareRandomQueue(ch *amqp.Channel) (amqp.Queue, error) {
 	return ch.QueueDeclare(
 		"",    //name

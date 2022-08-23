@@ -7,7 +7,7 @@ LISTENER_BINARY = listenerApp
 ## up: starts all containers in the background without forcing build
 up:
 	@echo "Starting Docker images..."
-	docker-compose up -d
+	docker-compose up -d 
 	@echo "Docker images started!"
 
 ## up_build: stops docker-compose (if running), builds all projects and starts docker compose
@@ -66,3 +66,8 @@ stop:
 	@echo "Stopping front end..."
 	@-pkill -SIGTERM -f "./${FRONT_END_BINARY}"
 	@echo "Stopped front end!"docker-mcom
+gen:
+	@echo "Generating grpc code from .proto file..."
+	cd ../logger-service/logs protoc --go_out=. --go_opt=paths=source_relative \
+    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+    logs.proto

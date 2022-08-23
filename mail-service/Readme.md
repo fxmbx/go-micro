@@ -1,4 +1,4 @@
-use mailhog for testing ...add to docker
+## use mailhog for testing ...add to docker
 
 //to allow you use css and auto convert to a format good for email
 

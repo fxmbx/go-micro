@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"logger-service/data"
+	"net"
+	"net/rpc"
 	"time"
 )
 
@@ -31,4 +34,22 @@ func (rpc *RPCServer) LogInfo(payload RPCPayload, resp *string) error {
 
 	*resp = "Processed payload via RPC: " + payload.Name
 	return nil
+}
+
+//starting the rpc server to listen
+func (app *Config) rpcListen() error {
+	log.Println("starting RPC server on port: ", rpcPort)
+	listen, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", rpcPort))
+	if err != nil {
+		return err
+	}
+	defer listen.Close()
+	for {
+		rpcCon, err := listen.Accept()
+		if err != nil {
+			continue
+		}
+		go rpc.ServeConn(rpcCon)
+	}
+
 }

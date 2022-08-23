@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"logger-service/data"
-	"net"
 	"net/http"
 	"net/rpc"
 	"time"
@@ -56,6 +55,11 @@ func main() {
 	err = rpc.Register(new(RPCServer))
 	//start rpc server
 	go app.rpcListen()
+
+	//LISTEN FOR GRPC CONNECTIONS
+
+	go app.gRPCListen()
+
 	log.Println("Starting service on port :", port)
 
 	srv := &http.Server{
@@ -87,22 +91,4 @@ func connectToMongo() (*mongo.Client, error) {
 	}
 	log.Println("Connected to mongo 😉")
 	return c, nil
-}
-
-//starting the rpc server to listen
-func (app *Config) rpcListen() error {
-	log.Println("starting RPC server on port: ", rpcPort)
-	listen, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", rpcPort))
-	if err != nil {
-		return err
-	}
-	defer listen.Close()
-	for {
-		rpcCon, err := listen.Accept()
-		if err != nil {
-			continue
-		}
-		go rpc.ServeConn(rpcCon)
-	}
-
 }
